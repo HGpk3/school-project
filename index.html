@@ -9,9 +9,9 @@
 </head>
 <body>
   <div class="app-shell">
+    <!-- Верхняя панель: название игры и основные действия -->
     <header class="topbar panel">
-      <div>
-        <p class="eyebrow">Офлайн-прототип для школы</p>
+      <div class="title-block">
         <h1>Своя игра: География России</h1>
         <p class="subtitle" id="phaseLabel"></p>
       </div>
@@ -22,19 +22,18 @@
     </header>
 
     <div class="layout">
+      <!-- Левая колонка: команды, краткий статус игры и журнал событий -->
       <aside class="sidebar">
         <section class="panel">
           <div class="panel-heading">
             <h2>Команды</h2>
-            <span class="chip">3 команды</span>
           </div>
           <div id="teamsPanel"></div>
         </section>
 
         <section class="panel">
           <div class="panel-heading">
-            <h2>Управление</h2>
-            <span class="chip">Ход игры</span>
+            <h2>Игра</h2>
           </div>
           <div id="roundSummary"></div>
           <div id="globalControls"></div>
@@ -43,22 +42,18 @@
         <section class="panel">
           <div class="panel-heading">
             <h2>Журнал</h2>
-            <span class="chip">Протокол</span>
           </div>
           <div id="eventLog" class="event-log"></div>
         </section>
       </aside>
 
+      <!-- Правая колонка: табло, активный вопрос и финальный раунд -->
       <main class="main-content">
         <section class="panel board-panel" id="boardPanel"></section>
         <section class="panel overlay-panel hidden" id="cluePanel"></section>
         <section class="panel overlay-panel hidden" id="finalPanel"></section>
       </main>
     </div>
-
-    <footer class="footer-note">
-      Проект работает без интернета и без установки программ: достаточно открыть файл <strong>index.html</strong>.
-    </footer>
   </div>
 
   <script src="app.js"></script>

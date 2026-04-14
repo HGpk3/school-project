@@ -1,5 +1,6 @@
 'use strict';
 
+// Основные игровые данные: раунды, категории, вопросы и финальные темы.
 const GAME_DATA = {
   title: 'Своя игра: География России',
   rounds: [
@@ -374,9 +375,11 @@ const GAME_DATA = {
   ]
 };
 
+// Ключ для сохранения прогресса игры в браузере.
 const STORAGE_KEY = 'svoya-igra-russia-school-v1';
 const MAX_LOG_ITEMS = 80;
 
+// Ссылки на главные DOM-элементы интерфейса.
 const phaseLabel = document.getElementById('phaseLabel');
 const teamsPanel = document.getElementById('teamsPanel');
 const roundSummary = document.getElementById('roundSummary');
@@ -388,11 +391,13 @@ const finalPanel = document.getElementById('finalPanel');
 const exportProtocolBtn = document.getElementById('exportProtocolBtn');
 const resetGameBtn = document.getElementById('resetGameBtn');
 
+// В state хранится всё текущее состояние партии.
 let state = loadState();
 
 render();
 attachGlobalEvents();
 
+// Единая точка подключения всех кликов и изменений в интерфейсе.
 function attachGlobalEvents() {
   exportProtocolBtn.addEventListener('click', exportProtocol);
   resetGameBtn.addEventListener('click', () => {
@@ -566,6 +571,7 @@ function attachGlobalEvents() {
   });
 }
 
+// Начальное состояние новой партии.
 function createInitialState() {
   return {
     teams: [
@@ -580,11 +586,12 @@ function createInitialState() {
       round.categories.map((category) => category.questions.map(() => false))
     ),
     currentClue: null,
-    log: [createLogEntry('Игра подготовлена. Можно вводить названия команд и начинать первый раунд.')],
+    log: [createLogEntry('Игра готова.')],
     final: createInitialFinalState()
   };
 }
 
+// Отдельное стартовое состояние для финального раунда.
 function createInitialFinalState() {
   return {
     activeTeamIds: [],
@@ -608,6 +615,7 @@ function createTeam(id, name) {
   };
 }
 
+// Пытаемся восстановить прошлую партию из localStorage.
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -622,6 +630,7 @@ function loadState() {
   }
 }
 
+// Нормализуем данные после загрузки, чтобы игра не падала на старом или битом состоянии.
 function normalizeState(candidate) {
   const fallback = createInitialState();
   if (!candidate || typeof candidate !== 'object') {
@@ -653,6 +662,7 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+// Полная перерисовка интерфейса после любого важного действия.
 function render() {
   renderHeader();
   renderTeams();
@@ -663,18 +673,20 @@ function render() {
   renderLog();
 }
 
+// Короткий статус под заголовком игры.
 function renderHeader() {
   const phaseMap = {
-    board: `${GAME_DATA.rounds[state.currentRoundIndex]?.title || 'Игра'}: выбирайте вопрос на табло.`,
-    clue: 'Вопрос открыт: отметь правильный или неправильный ответ команды.',
-    'final-selection': 'Финал: команды по очереди убирают темы, пока не останется одна.',
-    'final-wager': 'Финал: назначьте ставки для команд, допущенных к игре.',
-    'final-question': 'Финальный вопрос: отметьте ответы команд и завершите игру.',
-    'game-over': 'Игра завершена: итоговые результаты готовы.'
+    board: GAME_DATA.rounds[state.currentRoundIndex]?.title || 'Игра',
+    clue: 'Открыт вопрос',
+    'final-selection': 'Финал: выбор темы',
+    'final-wager': 'Финал: ставки',
+    'final-question': 'Финал: вопрос',
+    'game-over': 'Итоги'
   };
   phaseLabel.textContent = phaseMap[state.phase] || 'Игра готова.';
 }
 
+// Левая панель с командами, счетом и ручной корректировкой очков.
 function renderTeams() {
   const rankings = getRankedTeams();
   teamsPanel.innerHTML = state.teams.map((team) => {
@@ -684,17 +696,16 @@ function renderTeams() {
       <article class="team-card ${isControl ? 'is-control' : ''}">
         <div class="team-header">
           <strong>${escapeHtml(team.name)}</strong>
-          <span class="rank-badge">${rank} место</span>
+          <span class="rank-badge">${isControl ? 'Выбор' : `${rank} место`}</span>
         </div>
-        <label class="small-note" for="team-name-${team.id}">Название команды</label>
-        <input id="team-name-${team.id}" type="text" data-team-name="${team.id}" value="${escapeHtml(team.name)}" maxlength="32">
+        <input id="team-name-${team.id}" type="text" data-team-name="${team.id}" value="${escapeHtml(team.name)}" maxlength="32" placeholder="Название команды" aria-label="Название команды ${team.id + 1}">
         <div class="score-row">
           <span class="team-meta">Счёт</span>
           <span class="score-value">${formatScore(team.score)}</span>
         </div>
         <div class="team-meta">Верных ответов: ${team.correctAnswers} | Ошибок: ${team.wrongAnswers}</div>
         <div class="inline-actions" style="margin-top: 12px;">
-          <button class="mini-button ${isControl ? 'is-active' : ''}" data-action="set-control-team" data-team-id="${team.id}" type="button">Право выбора</button>
+          <button class="mini-button ${isControl ? 'is-active' : ''}" data-action="set-control-team" data-team-id="${team.id}" type="button">Передать выбор</button>
         </div>
         <div class="adjust-box">
           <input id="adjust-input-${team.id}" type="number" step="100" min="0" value="100" aria-label="Корректировка очков команды ${team.id + 1}">
@@ -706,6 +717,7 @@ function renderTeams() {
   }).join('');
 }
 
+// Краткая сводка по раунду и глобальные кнопки перехода.
 function renderSummary() {
   const round = GAME_DATA.rounds[state.currentRoundIndex];
   const remaining = round ? countRemainingClues(state.currentRoundIndex) : 0;
@@ -715,21 +727,17 @@ function renderSummary() {
   roundSummary.innerHTML = `
     <div class="summary-card">
       <div class="summary-row">
-        <strong>Текущий этап</strong>
-        <span class="chip">${state.phase === 'board' ? round?.title || 'Финал' : getPhaseTitle()}</span>
+        <strong>${state.phase === 'board' ? round?.title || 'Финал' : getPhaseTitle()}</strong>
+        <span class="chip">${remaining}</span>
       </div>
-      <p class="help-text">${round?.description || 'Итоговый раунд.'}</p>
+      <p class="help-text compact-text">Осталось вопросов: ${remaining}</p>
     </div>
     <div class="summary-card">
       <div class="summary-row">
-        <strong>Право выбора</strong>
+        <strong>Ход</strong>
         <span class="chip">${escapeHtml(controlTeam?.name || 'Не выбрано')}</span>
       </div>
-      <p class="help-text">Оставшихся вопросов в раунде: ${remaining}. Уже открыто: ${used}.</p>
-    </div>
-    <div class="summary-card">
-      <strong>Механики</strong>
-      <p class="help-text">Обычные вопросы, аукцион, кот в мешке, финал с удалением тем и ставками.</p>
+      <p class="help-text compact-text">Открыто: ${used}</p>
     </div>
   `;
 
@@ -752,6 +760,7 @@ function renderSummary() {
   }
 }
 
+// Основное табло вопросов или финальный экран победителя.
 function renderBoard() {
   if (state.phase === 'game-over') {
     const winner = getRankedTeams()[0];
@@ -759,7 +768,6 @@ function renderBoard() {
       <div class="board-header">
         <div>
           <h2>Итоги игры</h2>
-          <p class="help-text">Партия завершена. Можно скачать протокол и показать результат классу.</p>
         </div>
         <span class="chip">Финал завершён</span>
       </div>
@@ -767,7 +775,6 @@ function renderBoard() {
         <div class="badge">Победитель</div>
         <h3>${escapeHtml(winner.name)}</h3>
         <p class="winner-score">${formatScore(winner.score)}</p>
-        <p class="help-text">При необходимости можно начать новую игру кнопкой в верхней панели.</p>
       </div>
     `;
     return;
@@ -780,7 +787,6 @@ function renderBoard() {
     <div class="board-header">
       <div>
         <h2>${round.title}</h2>
-        <p class="help-text">${round.description}</p>
       </div>
       <span class="chip">Осталось: ${remaining}</span>
     </div>
@@ -813,6 +819,7 @@ function renderBoard() {
   `;
 }
 
+// Панель активного вопроса. Показывается только когда открыта конкретная клетка.
 function renderCluePanel() {
   if (state.phase !== 'clue' || !state.currentClue) {
     cluePanel.classList.add('hidden');
@@ -852,12 +859,13 @@ function renderCluePanel() {
     <div class="question-box">
       <p class="question-text">${escapeHtml(clue.question)}</p>
     </div>
-    ${clue.note ? `<div class="special-box"><strong>Подсказка ведущему:</strong> <p class="help-text">${escapeHtml(clue.note)}</p></div>` : ''}
+    ${clue.note ? `<div class="special-box"><span class="note-pill">${escapeHtml(clue.note)}</span></div>` : ''}
     ${answerBlock}
     ${renderClueControls(clueType, clue)}
   `;
 }
 
+// В зависимости от типа вопроса подключаем нужный набор действий.
 function renderClueControls(clueType, clue) {
   if (clueType === 'auction') {
     return renderAuctionControls(clue);
@@ -868,6 +876,7 @@ function renderClueControls(clueType, clue) {
   return renderStandardControls(clue);
 }
 
+// Обычный вопрос: команды могут отвечать, ошибаться или пропускать вопрос.
 function renderStandardControls(clue) {
   return `
     <div class="clue-actions">
@@ -876,7 +885,6 @@ function renderStandardControls(clue) {
         return `
           <div class="response-card">
             <strong>${escapeHtml(team.name)}</strong>
-            <p class="help-text">Номинал вопроса: ${clue.value}</p>
             <div class="response-buttons">
               <button class="response-button" data-action="standard-correct" data-team-id="${team.id}" type="button" ${locked ? 'disabled' : ''}>Верно (+${clue.value})</button>
               <button class="response-button" data-action="standard-wrong" data-team-id="${team.id}" type="button" ${locked ? 'disabled' : ''}>Неверно (-${clue.value})</button>
@@ -885,13 +893,13 @@ function renderStandardControls(clue) {
         `;
       }).join('')}
     </div>
-    <p class="notice help-text">Если никто не ответил, закрой вопрос отдельной кнопкой ниже.</p>
     <div class="global-controls">
       <button class="secondary-button" data-action="no-answer" type="button">Никто не ответил</button>
     </div>
   `;
 }
 
+// Аукцион: ведущий выбирает победителя торгов и задает ставку.
 function renderAuctionControls(clue) {
   const selectedTeam = getTeam(state.currentClue.auctionTeamId ?? state.controlTeamId);
   const limits = getAuctionLimits(selectedTeam, clue.value);
@@ -900,12 +908,12 @@ function renderAuctionControls(clue) {
 
   return `
     <div class="special-box">
-      <strong>Кто выиграл аукцион?</strong>
+      <strong>Победитель аукциона</strong>
       <div class="selection-grid">
         ${state.teams.map((team) => `
           <button class="final-theme ${team.id === selectedTeam.id ? 'is-active' : ''}" data-action="set-auction-team" data-team-id="${team.id}" type="button">
             ${escapeHtml(team.name)}<br>
-            <span class="help-text">Счёт: ${formatScore(team.score)}</span>
+            <span class="help-text compact-text">${formatScore(team.score)}</span>
           </button>
         `).join('')}
       </div>
@@ -916,7 +924,6 @@ function renderAuctionControls(clue) {
         <span class="chip">Допустимо: ${limits.min} - ${limits.max}</span>
       </div>
       <input id="auctionWagerInput" type="number" min="${limits.min}" max="${limits.max}" step="100" value="${wager}">
-      <p class="help-text">Если банк команды меньше номинала вопроса, можно поставить весь банк.</p>
     </div>
     <div class="special-actions">
       <button class="primary-button" data-action="auction-correct" type="button">Ответ верный (+${wager})</button>
@@ -925,6 +932,7 @@ function renderAuctionControls(clue) {
   `;
 }
 
+// Кот в мешке: команда передает вопрос сопернику и назначает стоимость.
 function renderCatControls(clue) {
   const currentChooser = getTeam(state.controlTeamId);
   const recipientId = state.currentClue.recipientTeamId;
@@ -934,8 +942,8 @@ function renderCatControls(clue) {
   return `
     <div class="special-box">
       <div class="summary-row">
-        <strong>Кому передать вопрос</strong>
-        <span class="chip">Выбирает: ${escapeHtml(currentChooser.name)}</span>
+        <strong>Кому передать</strong>
+        <span class="chip">${escapeHtml(currentChooser.name)}</span>
       </div>
       <div class="selection-grid">
         ${state.teams.map((team) => {
@@ -943,14 +951,14 @@ function renderCatControls(clue) {
           return `
             <button class="final-theme ${recipientId === team.id ? 'is-active' : ''}" data-action="set-cat-recipient" data-team-id="${team.id}" type="button" ${disabled ? 'disabled' : ''}>
               ${escapeHtml(team.name)}<br>
-              <span class="help-text">Счёт: ${formatScore(team.score)}</span>
+              <span class="help-text compact-text">${formatScore(team.score)}</span>
             </button>
           `;
         }).join('')}
       </div>
     </div>
     <div class="special-box">
-      <strong>Стоимость вопроса для соперника</strong>
+      <strong>Стоимость</strong>
       <div class="inline-actions" style="margin-top: 12px;">
         ${availableValues.map((value) => `
           <button class="value-button ${catCost === value ? 'is-active' : ''}" data-action="set-cat-cost" data-value="${value}" type="button">${value}</button>
@@ -967,6 +975,7 @@ function renderCatControls(clue) {
   `;
 }
 
+// Отрисовка панели финального раунда.
 function renderFinalPanel() {
   if (!['final-selection', 'final-wager', 'final-question', 'game-over'].includes(state.phase)) {
     finalPanel.classList.add('hidden');
@@ -991,6 +1000,7 @@ function renderFinalPanel() {
   }
 }
 
+// На этапе выбора темы команды по очереди убирают лишние темы.
 function renderFinalSelection() {
   const remainingThemes = GAME_DATA.finalThemes.filter((theme) => !state.final.removedThemeIds.includes(theme.id));
   const currentSelectorId = state.final.turnQueue[state.final.turnIndex % state.final.turnQueue.length];
@@ -1000,12 +1010,11 @@ function renderFinalSelection() {
     <div class="overlay-header">
       <div>
         <h2>Финал: выбор темы</h2>
-        <p class="help-text">Команды по очереди убирают темы. Оставшаяся тема и будет финальной.</p>
       </div>
       <span class="chip">Ход: ${escapeHtml(currentSelector?.name || 'Команда')}</span>
     </div>
     <div class="final-box">
-      <p class="question-text">Осталось тем: ${remainingThemes.length}. Уберите одну тему кнопкой ниже.</p>
+      <p class="question-text">Осталось тем: ${remainingThemes.length}</p>
     </div>
     <div class="selection-grid">
       ${GAME_DATA.finalThemes.map((theme) => {
@@ -1020,13 +1029,13 @@ function renderFinalSelection() {
   `;
 }
 
+// После выбора темы команды делают ставки в пределах своего счета.
 function renderFinalWagers() {
   const theme = getSelectedFinalTheme();
   finalPanel.innerHTML = `
     <div class="overlay-header">
       <div>
         <h2>Финал: ставки</h2>
-        <p class="help-text">Тема финального вопроса уже определена. Каждая допущенная команда делает ставку.</p>
       </div>
       <span class="chip">Тема: ${escapeHtml(theme.title)}</span>
     </div>
@@ -1037,7 +1046,7 @@ function renderFinalWagers() {
         return `
           <div class="response-card">
             <strong>${escapeHtml(team.name)}</strong>
-            <p class="help-text">Текущий счёт: ${formatScore(team.score)}</p>
+            <p class="help-text compact-text">${formatScore(team.score)}</p>
             <input type="number" data-final-wager="${team.id}" min="0" max="${Math.max(team.score, 0)}" step="100" value="${wager}">
           </div>
         `;
@@ -1049,6 +1058,7 @@ function renderFinalWagers() {
   `;
 }
 
+// Финальный вопрос: ведущий отмечает ответы и завершает игру.
 function renderFinalQuestion() {
   const theme = getSelectedFinalTheme();
   const allResponsesReady = state.final.activeTeamIds.every((teamId) => Boolean(state.final.responses[teamId]));
@@ -1056,7 +1066,7 @@ function renderFinalQuestion() {
     <div class="overlay-header">
       <div>
         <h2>Финальный вопрос</h2>
-        <p class="help-text">Тема: ${escapeHtml(theme.title)}</p>
+        <p class="help-text compact-text">${escapeHtml(theme.title)}</p>
       </div>
       <div class="inline-actions">
         <button class="secondary-button" data-action="reveal-final-answer" type="button" id="revealFinalAnswerBtn" ${state.final.showAnswer ? 'disabled' : ''}>Показать ответ</button>
@@ -1074,7 +1084,7 @@ function renderFinalQuestion() {
         return `
           <div class="response-card">
             <strong>${escapeHtml(team.name)}</strong>
-            <p class="help-text">Ставка: ${formatScore(wager)}</p>
+            <p class="help-text compact-text">Ставка: ${formatScore(wager)}</p>
             <div class="response-buttons">
               ${renderFinalResponseButton(teamId, response, 'correct', `Верно (+${wager})`)}
               ${renderFinalResponseButton(teamId, response, 'wrong', `Неверно (-${wager})`)}
@@ -1095,6 +1105,7 @@ function renderFinalResponseButton(teamId, currentResponse, response, label) {
   return `<button class="response-button ${currentResponse === response ? 'is-active' : ''}" data-action="set-final-response" data-team-id="${teamId}" data-response="${response}" type="button">${label}</button>`;
 }
 
+// Журнал последних действий для ведущего.
 function renderLog() {
   eventLog.innerHTML = state.log.map((entry) => `
     <div class="log-item">
@@ -1104,6 +1115,7 @@ function renderLog() {
   `).join('');
 }
 
+// Открываем выбранную клетку табло и запоминаем, какой вопрос сейчас активен.
 function openClue(roundIndex, categoryIndex, questionIndex) {
   if (state.phase !== 'board' || isClueUsed(roundIndex, categoryIndex, questionIndex)) {
     return;
@@ -1125,6 +1137,7 @@ function openClue(roundIndex, categoryIndex, questionIndex) {
   addLog(`Открыт вопрос ${clue.value} из категории «${GAME_DATA.rounds[roundIndex].categories[categoryIndex].title}».`);
 }
 
+// Логика обычного вопроса: правильный ответ дает очки и право выбора, ошибка отнимает очки.
 function resolveStandardClue(teamId, isCorrect) {
   const clueData = getCurrentClueData();
   if (!clueData || state.currentClue.lockedTeamIds.includes(teamId)) {
@@ -1154,6 +1167,7 @@ function resolveStandardClue(teamId, isCorrect) {
   render();
 }
 
+// Логика аукциона: очки меняются на величину ставки.
 function resolveAuction(isCorrect) {
   const clueData = getCurrentClueData();
   if (!clueData) {
@@ -1174,6 +1188,7 @@ function resolveAuction(isCorrect) {
   }
 }
 
+// Логика кота в мешке: очки получает или теряет выбранный соперник.
 function resolveCat(isCorrect) {
   const clueData = getCurrentClueData();
   const recipientId = state.currentClue.recipientTeamId;
@@ -1194,6 +1209,7 @@ function resolveCat(isCorrect) {
   }
 }
 
+// Закрываем текущий вопрос и возвращаемся к табло.
 function finalizeClue(message) {
   if (!state.currentClue) {
     return;
@@ -1206,6 +1222,7 @@ function finalizeClue(message) {
   addLog(message);
 }
 
+// Переход от первого раунда ко второму.
 function advanceRound() {
   if (state.currentRoundIndex !== 0 || countRemainingClues(0) !== 0) {
     return;
@@ -1214,6 +1231,7 @@ function advanceRound() {
   addLog('Первый раунд завершён. Игра переходит во второй раунд.');
 }
 
+// Запуск финального раунда после окончания второго тура.
 function startFinal() {
   if (state.currentRoundIndex !== 1 || countRemainingClues(1) !== 0) {
     return;
@@ -1227,6 +1245,7 @@ function startFinal() {
   addLog('Второй раунд завершён. Начинается финал.');
 }
 
+// Удаляем одну тему финала. Когда остается одна, начинаются ставки.
 function removeFinalTheme(themeId) {
   if (state.phase !== 'final-selection' || state.final.removedThemeIds.includes(themeId)) {
     return;
@@ -1253,6 +1272,7 @@ function removeFinalTheme(themeId) {
   render();
 }
 
+// Проверяем корректность ставок и открываем финальный вопрос.
 function confirmFinalWagers() {
   const allValid = state.final.activeTeamIds.every((teamId) => {
     const team = getTeam(teamId);
@@ -1276,6 +1296,7 @@ function setFinalResponse(teamId, response) {
   render();
 }
 
+// Подсчет финала и определение победителя игры.
 function finishGame() {
   if (!state.final.activeTeamIds.length) {
     return;
@@ -1301,6 +1322,7 @@ function finishGame() {
   addLog(`Игра завершена. Побеждает команда «${winner.name}» со счётом ${winner.score}.`);
 }
 
+// Ручная корректировка очков на случай спорных моментов во время школьной игры.
 function applyManualAdjustment(teamId, mode) {
   const input = document.getElementById(`adjust-input-${teamId}`);
   const value = Math.max(0, Number(input?.value) || 0);
@@ -1310,6 +1332,7 @@ function applyManualAdjustment(teamId, mode) {
   addLog(`Ручная корректировка счёта: ${team.name} ${signed >= 0 ? 'получает' : 'теряет'} ${Math.abs(signed)} очков.`);
 }
 
+// Назначение команды, которая выбирает следующую клетку.
 function setControlTeam(teamId, withLog) {
   state.controlTeamId = teamId;
   if (withLog) {
@@ -1319,6 +1342,7 @@ function setControlTeam(teamId, withLog) {
   render();
 }
 
+// Универсальное изменение счета и статистики ответов команды.
 function updateTeamScore(teamId, delta, isCorrect) {
   const team = getTeam(teamId);
   team.score += delta;
@@ -1329,6 +1353,7 @@ function updateTeamScore(teamId, delta, isCorrect) {
   }
 }
 
+// Любое важное действие попадает в журнал и сразу сохраняется.
 function addLog(text) {
   state.log.unshift(createLogEntry(text));
   state.log = state.log.slice(0, MAX_LOG_ITEMS);
@@ -1343,6 +1368,7 @@ function createLogEntry(text) {
   };
 }
 
+// Берем данные активного вопроса из общей структуры GAME_DATA.
 function getCurrentClueData() {
   if (!state.currentClue) {
     return null;
@@ -1363,6 +1389,7 @@ function getClueTypeTitle(type) {
   return 'Обычный вопрос';
 }
 
+// До финала допускаются команды с положительным счетом.
 function getEligibleFinalTeams() {
   const positive = state.teams.filter((team) => team.score > 0).map((team) => team.id);
   if (positive.length) {
@@ -1375,6 +1402,7 @@ function getSelectedFinalTheme() {
   return GAME_DATA.finalThemes.find((theme) => theme.id === state.final.selectedThemeId) || GAME_DATA.finalThemes[0];
 }
 
+// Сортировка команд по счету для вывода мест и победителя.
 function getRankedTeams() {
   return [...state.teams].sort((left, right) => right.score - left.score || left.id - right.id);
 }
@@ -1406,6 +1434,7 @@ function isClueUsed(roundIndex, categoryIndex, questionIndex) {
   return Boolean(state.usedClues[roundIndex][categoryIndex][questionIndex]);
 }
 
+// Правила аукциона: ставка не может быть ниже номинала, а при низком банке — выше счета команды.
 function getAuctionLimits(team, nominalValue) {
   const score = team?.score || 0;
   if (score > nominalValue) {
@@ -1428,13 +1457,14 @@ function getSuggestedAuctionWager(teamId) {
 }
 
 function formatScore(value) {
-  return `${value} очков`;
+  return `${value}`;
 }
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+// Экранируем пользовательский текст, чтобы безопасно вставлять его в HTML.
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -1444,6 +1474,7 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+// Экспорт всей партии в простой текстовый протокол, который удобно сохранить или распечатать.
 function exportProtocol() {
   const lines = [];
   lines.push(GAME_DATA.title);
