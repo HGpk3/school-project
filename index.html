@@ -3,57 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Офлайн-прототип игры 'Своя игра' по географии России для 3 команд.">
+  <meta name="description" content="Офлайн-прототип игры 'Своя игра' по географии России для школы.">
   <title>Своя игра: География России</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app-shell">
-    <!-- Верхняя панель: название игры и основные действия -->
-    <header class="topbar panel">
-      <div class="title-block">
-        <h1>Своя игра: География России</h1>
-        <p class="subtitle" id="phaseLabel"></p>
+    <!-- Стартовое меню -->
+    <section class="screen menu-screen" id="menuScreen">
+      <div class="menu-layout">
+        <article class="panel menu-hero">
+          <p class="eyebrow">Школьный офлайн-проект</p>
+          <h1>Своя игра</h1>
+          <p class="menu-subtitle">География России</p>
+          <p class="menu-text" id="menuMeta"></p>
+          <div class="menu-actions">
+            <button class="primary-button" data-action="open-setup" type="button">Играть</button>
+            <button class="secondary-button hidden" id="continueGameBtn" data-action="continue-game" type="button">Продолжить</button>
+            <button class="secondary-button" data-action="open-settings" type="button">Настройки</button>
+          </div>
+        </article>
+
+        <div class="menu-stack">
+          <article class="panel menu-card author-card">
+            <span class="info-label">Автор</span>
+            <h2>Немых Никита Денисович</h2>
+            <p>Прототип создан для школьного показа и запускается без интернета, сборки и установки программ.</p>
+          </article>
+
+          <article class="panel menu-card">
+            <span class="info-label">Что внутри</span>
+            <ul class="feature-list">
+              <li>3 команды и автоматический подсчёт очков</li>
+              <li>Аукцион, кот в мешке и финал со ставками</li>
+              <li>Настройки звука и звуки интерфейса</li>
+              <li>Экспорт протокола после игры</li>
+            </ul>
+          </article>
+        </div>
       </div>
-      <div class="topbar-actions">
-        <button class="secondary-button" id="exportProtocolBtn" type="button">Скачать протокол</button>
-        <button class="danger-button" id="resetGameBtn" type="button">Новая игра</button>
+    </section>
+
+    <!-- Экран подготовки: названия команд и краткие правила -->
+    <section class="screen setup-screen hidden" id="setupScreen">
+      <div class="screen-topbar">
+        <button class="secondary-button" data-action="go-menu" type="button">В меню</button>
+        <button class="secondary-button" data-action="open-settings" type="button">Настройки</button>
       </div>
-    </header>
 
-    <div class="layout">
-      <!-- Левая колонка: команды, краткий статус игры и журнал событий -->
-      <aside class="sidebar">
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Команды</h2>
+      <div class="setup-layout">
+        <article class="panel setup-card">
+          <div class="panel-heading compact-heading">
+            <div>
+              <span class="info-label">Подготовка</span>
+              <h2>Команды перед стартом</h2>
+            </div>
           </div>
-          <div id="teamsPanel"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Игра</h2>
+          <p class="setup-note" id="setupNote"></p>
+          <div class="setup-form-grid">
+            <label class="input-group">
+              <span>Команда 1</span>
+              <input type="text" data-setup-team="0" maxlength="32" placeholder="Например, Байкал">
+            </label>
+            <label class="input-group">
+              <span>Команда 2</span>
+              <input type="text" data-setup-team="1" maxlength="32" placeholder="Например, Урал">
+            </label>
+            <label class="input-group">
+              <span>Команда 3</span>
+              <input type="text" data-setup-team="2" maxlength="32" placeholder="Например, Тайга">
+            </label>
           </div>
-          <div id="roundSummary"></div>
-          <div id="globalControls"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Журнал</h2>
+          <div class="setup-actions">
+            <button class="primary-button" id="startGameBtn" data-action="start-game" type="button">Начать игру</button>
           </div>
-          <div id="eventLog" class="event-log"></div>
-        </section>
-      </aside>
+        </article>
 
-      <!-- Правая колонка: табло, активный вопрос и финальный раунд -->
-      <main class="main-content">
-        <section class="panel board-panel" id="boardPanel"></section>
-        <section class="panel overlay-panel hidden" id="cluePanel"></section>
-        <section class="panel overlay-panel hidden" id="finalPanel"></section>
-      </main>
-    </div>
+        <article class="panel rules-card">
+          <div class="panel-heading compact-heading">
+            <div>
+              <span class="info-label">Инструкция</span>
+              <h2>Правила игры</h2>
+            </div>
+          </div>
+          <div class="rules-grid">
+            <div class="rule-card">
+              <strong>1. Основной раунд</strong>
+              <p>Команды выбирают вопрос на табло. За верный ответ очки прибавляются, за неверный вычитаются.</p>
+            </div>
+            <div class="rule-card">
+              <strong>2. Аукцион</strong>
+              <p>Ведущий выбирает победителя торгов и задаёт ставку. Очки меняются на величину этой ставки.</p>
+            </div>
+            <div class="rule-card">
+              <strong>3. Кот в мешке</strong>
+              <p>Команда передаёт вопрос сопернику и назначает стоимость. Отвечает только выбранная команда.</p>
+            </div>
+            <div class="rule-card">
+              <strong>4. Финал</strong>
+              <p>Команды убирают темы, затем делают ставки и отвечают на последний вопрос. После этого подводятся итоги.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Основной игровой экран -->
+    <section class="screen game-screen hidden" id="gameScreen">
+      <header class="panel game-topbar">
+        <div>
+          <p class="eyebrow">Своя игра</p>
+          <h2>География России</h2>
+          <p class="status-pill" id="phaseLabel"></p>
+        </div>
+        <div class="topbar-actions">
+          <button class="secondary-button" data-action="go-menu" type="button">Меню</button>
+          <button class="secondary-button" data-action="open-settings" type="button">Настройки</button>
+          <button class="secondary-button" data-action="export-protocol" type="button">Протокол</button>
+          <button class="danger-button" data-action="reset-game" type="button">Новая игра</button>
+        </div>
+      </header>
+
+      <section class="panel score-panel">
+        <div class="teams-grid" id="teamsPanel"></div>
+      </section>
+
+      <div class="game-layout">
+        <main class="game-main">
+          <section class="panel board-panel" id="boardPanel"></section>
+        </main>
+
+        <aside class="game-side">
+          <section class="panel summary-panel">
+            <div class="panel-heading compact-heading">
+              <h3>Игра</h3>
+            </div>
+            <div id="roundSummary"></div>
+            <div id="globalControls"></div>
+          </section>
+
+          <section class="panel log-panel">
+            <div class="panel-heading compact-heading">
+              <h3>Журнал</h3>
+            </div>
+            <div id="eventLog" class="event-log"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <!-- Окно настроек звука -->
+  <div class="modal-backdrop hidden" id="settingsModal">
+    <section class="panel settings-modal">
+      <div class="modal-header">
+        <div>
+          <span class="info-label">Настройки</span>
+          <h3>Звуки интерфейса</h3>
+        </div>
+        <button class="secondary-button icon-button" data-action="close-settings" type="button">Закрыть</button>
+      </div>
+
+      <div class="settings-grid">
+        <label class="setting-row">
+          <div>
+            <strong>Включить звук</strong>
+            <p>Общий переключатель всех звуков интерфейса.</p>
+          </div>
+          <input type="checkbox" id="settingsSoundEnabled">
+        </label>
+
+        <label class="setting-row">
+          <div>
+            <strong>Клики по кнопкам</strong>
+            <p>Короткий звук при нажатии на кнопки.</p>
+          </div>
+          <input type="checkbox" id="settingsUiSounds">
+        </label>
+
+        <label class="setting-row">
+          <div>
+            <strong>Набор текста</strong>
+            <p>Лёгкие звуки при вводе названий команд и чисел.</p>
+          </div>
+          <input type="checkbox" id="settingsTypingSounds">
+        </label>
+
+        <label class="setting-row">
+          <div>
+            <strong>Звуки результата</strong>
+            <p>Отдельные сигналы для верных и неверных действий.</p>
+          </div>
+          <input type="checkbox" id="settingsResultSounds">
+        </label>
+
+        <label class="setting-row volume-row">
+          <div>
+            <strong>Громкость</strong>
+            <p>Общая громкость встроенных звуков.</p>
+          </div>
+          <div class="volume-control">
+            <input type="range" id="settingsVolume" min="0" max="100" step="1">
+            <span id="settingsVolumeValue"></span>
+          </div>
+        </label>
+      </div>
+    </section>
+  </div>
+
+  <!-- Модальное окно активного вопроса -->
+  <div class="modal-backdrop hidden" id="clueModal">
+    <section class="panel modal-panel overlay-panel" id="cluePanel"></section>
+  </div>
+
+  <!-- Модальное окно этапов финала -->
+  <div class="modal-backdrop hidden" id="finalModal">
+    <section class="panel modal-panel overlay-panel" id="finalPanel"></section>
   </div>
 
   <script src="app.js"></script>
