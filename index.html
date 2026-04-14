@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Офлайн-прототип игры 'Своя игра' по географии России для 3 команд.">
+  <title>Своя игра: География России</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar panel">
+      <div>
+        <p class="eyebrow">Офлайн-прототип для школы</p>
+        <h1>Своя игра: География России</h1>
+        <p class="subtitle" id="phaseLabel"></p>
+      </div>
+      <div class="topbar-actions">
+        <button class="secondary-button" id="exportProtocolBtn" type="button">Скачать протокол</button>
+        <button class="danger-button" id="resetGameBtn" type="button">Новая игра</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Команды</h2>
+            <span class="chip">3 команды</span>
+          </div>
+          <div id="teamsPanel"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Управление</h2>
+            <span class="chip">Ход игры</span>
+          </div>
+          <div id="roundSummary"></div>
+          <div id="globalControls"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Журнал</h2>
+            <span class="chip">Протокол</span>
+          </div>
+          <div id="eventLog" class="event-log"></div>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <section class="panel board-panel" id="boardPanel"></section>
+        <section class="panel overlay-panel hidden" id="cluePanel"></section>
+        <section class="panel overlay-panel hidden" id="finalPanel"></section>
+      </main>
+    </div>
+
+    <footer class="footer-note">
+      Проект работает без интернета и без установки программ: достаточно открыть файл <strong>index.html</strong>.
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
